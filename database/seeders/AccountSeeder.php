@@ -25,7 +25,7 @@ class AccountSeeder extends Seeder
         Account::create([
             'email'=>'super@test.com',
             'password'=>Hash::make('123456'),
-            'role'=>'supervision'
+            'role'=>'superviseur'
         ]);
     }
 }

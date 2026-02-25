@@ -201,7 +201,7 @@
                         <small>Gestion et contrôle</small>
                     </div>
                 </div>
-                <a href="/login/supervision" class="btn-portail">Accéder</a>
+                <a href="/login/superviseur" class="btn-portail">Accéder</a>
             </div>
 
             <!-- Shift Leader -->
