@@ -9,12 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('accounts', function (Blueprint $table) {
-            $table->id();
-            $table->string('email')->unique();
-            $table->string('password');
-            $table->enum('role', ['methodes','shift_leader','supervision']);
-            $table->timestamps();
-        });
+    $table->id();
+    $table->string('email')->unique();
+    $table->string('password');
+    $table->enum('role', ['methodes','shift_leader','superviseur']);
+    $table->timestamps();
+});
     }
 
     public function down(): void

@@ -2,17 +2,27 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 
-Route::get('/', function(){
-    return view('home');
-});
+// Page d'accueil
+Route::get('/', function() { return view('home'); });
 
+// Login
 Route::get('/login/{role}', [AuthController::class,'showLogin'])->name('login.show');
 Route::post('/login/{role}', [AuthController::class,'login'])->name('login.perform');
 
-// ⭐ dashboard protected
-Route::get('/dashboard/{role}', [AuthController::class,'dashboard'])
-     ->name('dashboard')
-     ->middleware('role');
+// Dashboards protégés
+Route::middleware(['role:superviseur'])->group(function(){
+    Route::get('/dashboard/superviseur',[DashboardController::class,'superviseur'])->name('dashboard.superviseur');
+});
 
-Route::post('/logout', [AuthController::class,'logout'])->name('logout');
+Route::middleware(['role:methodes'])->group(function(){
+    Route::get('/dashboard/methodes',[DashboardController::class,'methodes'])->name('dashboard.methodes');
+});
+
+Route::middleware(['role:shift_leader'])->group(function(){
+    Route::get('/dashboard/shift',[DashboardController::class,'shift'])->name('dashboard.shift');
+});
+
+// Logout
+Route::post('/logout',[AuthController::class,'logout'])->name('logout');
