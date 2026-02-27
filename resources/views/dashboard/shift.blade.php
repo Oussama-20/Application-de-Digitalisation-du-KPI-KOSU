@@ -333,7 +333,7 @@
         <!-- Boutons d'action groupés -->
         <div class="action-buttons">
             <!-- Bouton Saisir Shift -->
-            <a href="" class="btn-shift">
+            <a href="{{ route('shifts.create') }}" class="btn-shift">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 5v14M5 12h14"/>
                 </svg>
