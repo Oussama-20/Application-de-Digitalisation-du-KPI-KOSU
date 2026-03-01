@@ -13,9 +13,7 @@ class ShiftController extends Controller
     public function create()
     {
         $references = Reference::all();
-        $shifts = Shift::with('details')->latest()->get();
-
-        return view('shifts.create', compact('references', 'shifts'));
+        return view('shifts.create', compact('references'));
     }
 
     public function store(Request $request)
@@ -72,7 +70,7 @@ class ShiftController extends Controller
             ]);
         }
 
-        // Stocker les lignes dans la session pour les réafficher
+        // Stocker les lignes dans la session pour les réafficher après enregistrement réussi
         $request->session()->flash('new_rows', $request->details);
 
         return redirect()->route('shifts.create')
@@ -87,7 +85,6 @@ class ShiftController extends Controller
 
     public function show(Shift $shift)
     {
-        // Affichage détaillé d'un shift (pour supervision)
         return view('shifts.show', compact('shift'));
     }
 }
