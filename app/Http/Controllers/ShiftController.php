@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Shift;
@@ -11,10 +12,10 @@ class ShiftController extends Controller
 {
     public function create()
     {
-       
+        $references = Reference::all();
+        $shifts = Shift::with('details')->latest()->get();
 
-        $references = Reference::all(); // pour alimenter la liste déroulante des références
-        return view('shifts.create', compact('references'));
+        return view('shifts.create', compact('references', 'shifts'));
     }
 
     public function store(Request $request)
@@ -71,7 +72,11 @@ class ShiftController extends Controller
             ]);
         }
 
-        return redirect()->route('shifts.index')->with('success', 'Shift enregistré avec succès.');
+        // Stocker les lignes dans la session pour les réafficher
+        $request->session()->flash('new_rows', $request->details);
+
+        return redirect()->route('shifts.create')
+            ->with('success', 'Shift enregistré avec succès.');
     }
 
     public function index()

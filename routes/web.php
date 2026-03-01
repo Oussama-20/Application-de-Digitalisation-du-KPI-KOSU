@@ -23,13 +23,20 @@ Route::middleware(['role:methodes'])->group(function(){
 });
 
 Route::middleware(['role:shift_leader'])->group(function(){
+
     Route::get('/dashboard/shift',[DashboardController::class,'shift'])->name('dashboard.shift');
+
+    // redirect إذا دخل /shifts
+    Route::get('/shifts', function () {
+        return redirect()->route('shifts.create');
+    });
+
     Route::get('/shifts/create', [ShiftController::class, 'create'])->name('shifts.create');
+Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
     Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
-    Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
     Route::get('/shifts/{shift}', [ShiftController::class, 'show'])->name('shifts.show');
 
-    // Routes pour le rôle méthode (gestion des références/coefficients)
+    // references
     Route::resource('references', ReferenceController::class)->middleware('can:method');
 });
 
