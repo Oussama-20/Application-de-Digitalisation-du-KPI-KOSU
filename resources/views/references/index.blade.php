@@ -18,7 +18,7 @@
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -92,7 +92,7 @@
         }
         
         .btn-edit {
-            background: #3b82f6;  /* Changé en bleu */
+            background: #3b82f6;
             color: white;
             padding: 6px 12px;
             border-radius: 6px;
@@ -179,6 +179,11 @@
             padding-top: 20px;
             border-top: 1px solid #f0f0f0;
         }
+        
+        .value-highlight {
+            font-weight: 600;
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -196,57 +201,62 @@
         </div>
         
         <div class="badge">
-            Gestion des références et coefficients
+            Gestion des références, coefficients, OST et KOSU objectif
         </div>
 
         <div class="stats">
             <strong>{{ count($references) }}</strong> référence(s) trouvée(s)
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>RÉFÉRENCE</th>
-                    <th>COEFFICIENT</th>
-                    <th>CRÉÉ PAR</th>
-                    <th>DERNIÈRE MAJ</th>
-                    <th>ACTIONS</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($references as $ref)
-                <tr>
-                    <td><strong>{{ $ref->reference }}</strong></td>
-                    <td>{{ number_format($ref->coefficient, 1) }}</td>
-                    <td>{{ $ref->created_by }}</td>
-                    <td>{{ $ref->updated_at->format('d/m/Y') }}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <!-- CORRECTION: Ajout de la route pour modifier -->
-                            <a href="{{ route('references.edit', $ref) }}" class="btn-edit">
-                                ✏️ Modifier
-                            </a>
-                            
-                            <!-- CORRECTION: Ajout de la route pour supprimer -->
-                            <form action="{{ route('references.destroy', $ref) }}" method="POST" style="display: inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn-delete" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette référence ?')">
-                                    🗑️ Supprimer
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="5" class="empty-state">
-                        🕒 Aucune référence trouvée
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>RÉFÉRENCE</th>
+                        <th>NOM</th>
+                        <th>COEFFICIENT</th>
+                        <th>OST</th>
+                        <th>KOSU OBJECTIF</th>
+                        <th>CRÉÉ PAR</th>
+                        <th>DERNIÈRE MAJ</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($references as $ref)
+                    <tr>
+                        <td><strong>{{ $ref->reference }}</strong></td>
+                        <td>{{ $ref->name ?? '-' }}</td>
+                        <td class="value-highlight">{{ number_format($ref->coefficient, 2) }}</td>
+                        <td class="value-highlight">{{ $ref->ost ? number_format($ref->ost, 2) : '-' }}</td>
+                        <td class="value-highlight">{{ $ref->kosu_objectif ? number_format($ref->kosu_objectif, 2) : '-' }}</td>
+                        <td>{{ $ref->created_by }}</td>
+                        <td>{{ $ref->updated_at->format('d/m/Y') }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{{ route('references.edit', $ref) }}" class="btn-edit">
+                                    ✏️ Modifier
+                                </a>
+                                <form action="{{ route('references.destroy', $ref) }}" method="POST" style="display: inline;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn-delete" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette référence ?')">
+                                        🗑️ Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            🕒 Aucune référence trouvée
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
         <div class="footer">
             Made with Emergent

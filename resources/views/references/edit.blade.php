@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modifier Référence</title>
     <style>
-        /* Mêmes styles que la vue create */
         * {
             margin: 0;
             padding: 0;
@@ -19,7 +18,7 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -73,6 +72,13 @@
             background: #3046b3;
         }
         
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
         .form-group {
             margin-bottom: 20px;
         }
@@ -124,11 +130,26 @@
             margin-left: 5px;
         }
         
+        .info-text {
+            color: #6c757d;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
         .footer {
             text-align: center;
             margin-top: 30px;
             color: #6c757d;
             font-size: 13px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 20px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
         }
     </style>
 </head>
@@ -145,6 +166,8 @@
             @csrf
             @method('PUT')
 
+            <div class="section-title">📌 Informations de base</div>
+            
             <div class="form-group">
                 <label for="reference">
                     Référence <span class="required">*</span>
@@ -158,10 +181,13 @@
                 @error('reference')
                     <span class="error">{{ $message }}</span>
                 @enderror
+                <div class="info-text">
+                    Format: REF-XXX (ex: REF-A100, REF-B200)
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="name">Nom (optionnel)</label>
+                <label for="name">Nom de la référence</label>
                 <input type="text" 
                        id="name" 
                        name="name" 
@@ -172,30 +198,90 @@
                 @enderror
             </div>
 
-            <div class="form-group">
-                <label for="coefficient">
-                    Coefficient <span class="required">*</span>
-                </label>
-                <input type="number" 
-                       id="coefficient" 
-                       name="coefficient" 
-                       value="{{ old('coefficient', $reference->coefficient) }}" 
-                       step="0.1" 
-                       min="0" 
-                       max="9999.99"
-                       placeholder="Ex: 1.5"
-                       required>
-                @error('coefficient')
-                    <span class="error">{{ $message }}</span>
-                @enderror
+            <div class="section-title">⚙️ Paramètres techniques</div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="coefficient">
+                        Coefficient <span class="required">*</span>
+                    </label>
+                    <input type="number" 
+                           id="coefficient" 
+                           name="coefficient" 
+                           value="{{ old('coefficient', $reference->coefficient) }}" 
+                           step="0.1" 
+                           min="0" 
+                           max="9999.99"
+                           placeholder="Ex: 1.5"
+                           required>
+                    @error('coefficient')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label for="ost">
+                        OST (Operation Standard Time)
+                    </label>
+                    <input type="number" 
+                           id="ost" 
+                           name="ost" 
+                           value="{{ old('ost', $reference->ost) }}" 
+                           step="0.01" 
+                           min="0" 
+                           max="9999.99"
+                           placeholder="Ex: 2.5">
+                    @error('ost')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                    <div class="info-text">
+                        Temps standard d'opération (en minutes)
+                    </div>
+                </div>
             </div>
 
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="kosu_objectif">
+                        KOSU Objectif
+                    </label>
+                    <input type="number" 
+                           id="kosu_objectif" 
+                           name="kosu_objectif" 
+                           value="{{ old('kosu_objectif', $reference->kosu_objectif) }}" 
+                           step="0.01" 
+                           min="0" 
+                           max="9999.99"
+                           placeholder="Ex: 1.2">
+                    @error('kosu_objectif')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                    <div class="info-text">
+                        KOSU objectif pour cette référence
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="created_by">
+                        Créé par
+                    </label>
+                    <input type="text" 
+                           id="created_by" 
+                           name="created_by" 
+                           value="{{ old('created_by', $reference->created_by) }}" 
+                           class="bg-gray-50"
+                           readonly>
+                </div>
+            </div>
+
+            <div class="section-title">📝 Informations complémentaires</div>
+            
             <div class="form-group">
-                <label for="description">Description (optionnelle)</label>
+                <label for="description">Description</label>
                 <textarea id="description" 
                           name="description" 
                           rows="4" 
-                          placeholder="Description de la référence...">{{ old('description', $reference->description) }}</textarea>
+                          placeholder="Description détaillée de la référence...">{{ old('description', $reference->description) }}</textarea>
                 @error('description')
                     <span class="error">{{ $message }}</span>
                 @enderror

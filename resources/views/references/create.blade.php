@@ -18,7 +18,7 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -70,6 +70,13 @@
         
         .btn-primary:hover {
             background: #3046b3;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
         }
         
         .form-group {
@@ -144,6 +151,24 @@
             color: #6c757d;
             font-size: 13px;
         }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 20px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .badge-required {
+            background: #fee2e2;
+            color: #dc3545;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -155,12 +180,26 @@
             </a>
         </div>
 
+        @if($errors->any())
+            <div style="background: #fee2e2; color: #dc3545; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <strong>⚠️ Veuillez corriger les erreurs :</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form action="{{ route('references.store') }}" method="POST">
             @csrf
 
+            <div class="section-title">📌 Informations de base</div>
+            
             <div class="form-group">
                 <label for="reference">
                     Référence <span class="required">*</span>
+                    <span class="badge-required">Obligatoire</span>
                 </label>
                 <input type="text" 
                        id="reference" 
@@ -171,50 +210,104 @@
                 @error('reference')
                     <span class="error">{{ $message }}</span>
                 @enderror
-                <div class="info-text">
-                    Format: REF-XXX (ex: REF-A100, REF-B200)
-                </div>
             </div>
 
             <div class="form-group">
-                <label for="name">Nom (optionnel)</label>
+                <label for="name">Nom de la référence</label>
                 <input type="text" 
                        id="name" 
                        name="name" 
                        value="{{ old('name') }}" 
-                       placeholder="Ex: Réference test">
+                       placeholder="Ex: Référence test">
                 @error('name')
                     <span class="error">{{ $message }}</span>
                 @enderror
             </div>
 
-            <div class="form-group">
-                <label for="coefficient">
-                    Coefficient <span class="required">*</span>
-                </label>
-                <input type="number" 
-                       id="coefficient" 
-                       name="coefficient" 
-                       value="{{ old('coefficient') }}" 
-                       step="0.1" 
-                       min="0" 
-                       max="9999.99"
-                       placeholder="Ex: 1.5"
-                       required>
-                @error('coefficient')
-                    <span class="error">{{ $message }}</span>
-                @enderror
-                <div class="info-text">
-                    Valeur avec 1 décimale (ex: 1.2, 1.5, 2.0)
+            <div class="section-title">⚙️ Paramètres techniques</div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="coefficient">
+                        Coefficient <span class="required">*</span>
+                        <span class="badge-required">Obligatoire</span>
+                    </label>
+                    <input type="number" 
+                           id="coefficient" 
+                           name="coefficient" 
+                           value="{{ old('coefficient') }}" 
+                           step="0.1" 
+                           min="0" 
+                           max="9999.99"
+                           placeholder="Ex: 1.5"
+                           required>
+                    @error('coefficient')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label for="ost">
+                        OST (Operation Standard Time) <span class="required">*</span>
+                        <span class="badge-required">Obligatoire</span>
+                    </label>
+                    <input type="number" 
+                           id="ost" 
+                           name="ost" 
+                           value="{{ old('ost') }}" 
+                           step="0.01" 
+                           min="0" 
+                           max="9999.99"
+                           placeholder="Ex: 2.5"
+                           required>
+                    @error('ost')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                    <div class="info-text">
+                        Temps standard d'opération (en minutes)
+                    </div>
                 </div>
             </div>
 
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="kosu_objectif">
+                        KOSU Objectif <span class="required">*</span>
+                        <span class="badge-required">Obligatoire</span>
+                    </label>
+                    <input type="number" 
+                           id="kosu_objectif" 
+                           name="kosu_objectif" 
+                           value="{{ old('kosu_objectif') }}" 
+                           step="0.01" 
+                           min="0" 
+                           max="9999.99"
+                           placeholder="Ex: 1.2"
+                           required>
+                    @error('kosu_objectif')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label for="created_by">Créé par</label>
+                    <input type="text" 
+                           id="created_by" 
+                           name="created_by" 
+                           value="{{ old('created_by', 'ME001') }}" 
+                           class="bg-gray-50"
+                           readonly>
+                </div>
+            </div>
+
+            <div class="section-title">📝 Informations complémentaires</div>
+            
             <div class="form-group">
-                <label for="description">Description (optionnelle)</label>
+                <label for="description">Description</label>
                 <textarea id="description" 
                           name="description" 
                           rows="4" 
-                          placeholder="Description de la référence...">{{ old('description') }}</textarea>
+                          placeholder="Description détaillée de la référence...">{{ old('description') }}</textarea>
                 @error('description')
                     <span class="error">{{ $message }}</span>
                 @enderror
@@ -222,7 +315,7 @@
 
             <div class="button-group">
                 <button type="submit" class="btn btn-primary">
-                    💾 Enregistrer
+                    💾 Enregistrer la référence
                 </button>
                 <a href="{{ route('references.index') }}" class="btn btn-back">
                     ✖ Annuler
