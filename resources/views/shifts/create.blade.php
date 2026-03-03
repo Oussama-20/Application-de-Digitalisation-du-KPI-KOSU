@@ -23,10 +23,32 @@
         .graphic-rouge { background-color: #dc3545; }
         .graphic-fonce { background-color: #8b0000; }
         .graphic-gris { background-color: #6c757d; }
+        
+        /* Tableau plus large */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        table {
+            min-width: 1800px; /* Tableau plus large */
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            white-space: nowrap;
+            padding: 12px 8px;
+        }
+        
+        input, select {
+            width: 100%;
+            min-width: 80px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-4">
-    <div class="container mx-auto p-4 bg-white rounded shadow">
+    <div class="container mx-auto p-4 bg-white rounded shadow" style="max-width: 1400px;">
         <h1 class="text-2xl font-bold mb-4">Nouveau Shift - Ligne {{ old('line', 'L1') }}</h1>
 
         @if(session('success'))
@@ -61,7 +83,6 @@
                         @endfor
                     </select>
                 </div>
-                
             </div>
 
             <div class="mb-4 flex justify-between items-center">
@@ -72,20 +93,22 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="table-container">
                 <table class="w-full border-collapse border" id="detailsTable">
                     <thead>
                         <tr class="bg-gray-100">
                             <th class="border p-2">HEURES</th>
-                            <th class="border p-2">NB OP. PLANIFIÉS</th>
-                            <th class="border p-2">NB OP. PRÉSENTS</th>
-                            <th class="border p-2">TEMPS NET (H)</th>
+                            <th class="border p-2">NB OP.<br>PLANIFIÉS</th>
+                            <th class="border p-2">NB OP.<br>PRÉSENTS</th>
+                            <th class="border p-2">TEMPS NET<br>(H)</th>
                             <th class="border p-2">RÉFÉRENCE</th>
                             <th class="border p-2">COEFF.</th>
-                            <th class="border p-2">QUANTITÉ OBJ.</th>
-                            <th class="border p-2">QUANTITÉ BONNES</th>
-                            <th class="border p-2">QUANTITÉ MAUVAISES</th>
-                            <th class="border p-2">KOSU RÉEL</th>
+                            <th class="border p-2">QUANTITÉ<br>OBJ.</th>
+                            <th class="border p-2">QUANTITÉ<br>BONNES</th>
+                            <th class="border p-2">QUANTITÉ<br>MAUVAISES</th>
+                            <th class="border p-2">OST</th>
+                            <th class="border p-2">KOSU<br>OBJECTIF</th>
+                            <th class="border p-2">KOSU<br>RÉEL</th>
                             <th class="border p-2">GRAPHIQUE<br><small>Obj +15% +25% +35%</small></th>
                             <th class="border p-2">COMMENTAIRES</th>
                             <th class="border p-2">ACTION</th>
@@ -105,6 +128,7 @@
                             <td class="border p-2" id="sumObj">0</td>
                             <td class="border p-2" id="sumGood">0</td>
                             <td class="border p-2" id="sumBad">0</td>
+                            <td class="border p-2" colspan="2"></td>
                             <td class="border p-2" id="globalKosuDisplay">-</td>
                             <td class="border p-2" colspan="3">
                                 Taux Défauts: <span id="defectRate">0%</span> | 
@@ -112,7 +136,7 @@
                             </td>
                         </tr>
                         <tr class="bg-gray-100">
-                            <td colspan="13" class="border p-2 text-center">
+                            <td colspan="15" class="border p-2 text-center">
                                 <span id="lineCount">0 ligne(s)</span> · 
                                 <span id="completeCount">0 complète(s)</span> · 
                                 KOSU Global: <span id="globalKosuValue">-</span>
@@ -125,7 +149,6 @@
             <div class="mt-4 flex gap-2">
                 <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded">Enregistrer le shift</button>
                 
-                {{-- Bouton de retour au dashboard selon le rôle --}}
                 @auth
                     @php
                         $dashboardRoute = match(auth()->user()->role) {
@@ -146,26 +169,26 @@
     </div>
 
     <script>
-        // Données des références depuis le serveur (depuis la table references)
+        // Données des références depuis le serveur
         const references = @json($references);
 
-        // Anciennes données du formulaire (après erreur de validation)
+        // Anciennes données du formulaire
         const oldDetails = @json(old('details', []));
 
-        // Nouvelles lignes flashées après enregistrement réussi
+        // Nouvelles lignes flashées
         const newRows = @json(session('new_rows', []));
 
         // Variables globales
         let maxIndex = 0;
         const STORAGE_KEY = 'shift_draft';
-        const EXPIRY_HOURS = 24; // 24 heures
+        const EXPIRY_HOURS = 24;
 
-        // ---------- Fonctions de sauvegarde locale ----------
+        // ---------- Fonctions de sauvegarde ----------
         function saveDraft() {
             const rows = [];
             document.querySelectorAll('#tableBody tr').forEach(tr => {
                 const rowData = {
-                    hour: tr.querySelector('.hour-input')?.value || '',
+                    hour: tr.querySelector('.hour-input')?.value || '08:00',
                     planned_operators: tr.querySelector('.planned-input')?.value || '0',
                     present_operators: tr.querySelector('.present-input')?.value || '0',
                     net_time: tr.querySelector('.net-input')?.value || '0',
@@ -178,6 +201,7 @@
                 };
                 rows.push(rowData);
             });
+            
             const draft = {
                 timestamp: Date.now(),
                 rows: rows
@@ -188,27 +212,32 @@
         function loadDraft() {
             const draftJson = localStorage.getItem(STORAGE_KEY);
             if (!draftJson) return false;
+            
             try {
                 const draft = JSON.parse(draftJson);
                 const age = Date.now() - draft.timestamp;
+                
                 if (age > EXPIRY_HOURS * 60 * 60 * 1000) {
                     localStorage.removeItem(STORAGE_KEY);
                     return false;
                 }
-                // Vider le tableau
+                
                 document.getElementById('tableBody').innerHTML = '';
-                // Ajouter chaque ligne
-                draft.rows.forEach((rowData, index) => {
-                    rowData.index = index;
-                    addRow(rowData);
-                });
-                return true;
+                
+                if (draft.rows && draft.rows.length > 0) {
+                    draft.rows.forEach((rowData, index) => {
+                        rowData.index = index;
+                        addRow(rowData);
+                    });
+                    return true;
+                }
             } catch (e) {
-                return false;
+                localStorage.removeItem(STORAGE_KEY);
             }
+            return false;
         }
 
-        // ---------- Fonctions principales ----------
+        // ---------- Ajouter une ligne avec valeurs vides ----------
         function addRow(data = {}) {
             const tbody = document.getElementById('tableBody');
             const tr = document.createElement('tr');
@@ -218,44 +247,44 @@
             maxIndex = Math.max(maxIndex, index);
             const currentIndex = index;
 
-            // Heure
+            // HEURE
             const hourCell = document.createElement('td');
             hourCell.className = 'border p-2';
             hourCell.innerHTML = `<input type="time" name="details[${currentIndex}][hour]" value="${data.hour || '08:00'}" class="w-full border rounded p-1 hour-input" required>`;
             tr.appendChild(hourCell);
 
-            // Planifiés
+            // PLANIFIÉS (vide = 0)
             const plannedCell = document.createElement('td');
             plannedCell.className = 'border p-2';
-            plannedCell.innerHTML = `<input type="number" name="details[${currentIndex}][planned_operators]" value="${data.planned_operators || 0}" min="0" class="w-full border rounded p-1 planned-input">`;
+            plannedCell.innerHTML = `<input type="number" name="details[${currentIndex}][planned_operators]" value="0" min="0" class="w-full border rounded p-1 planned-input">`;
             tr.appendChild(plannedCell);
 
-            // Présents
+            // PRÉSENTS (vide = 0)
             const presentCell = document.createElement('td');
             presentCell.className = 'border p-2';
-            presentCell.innerHTML = `<input type="number" name="details[${currentIndex}][present_operators]" value="${data.present_operators || 0}" min="0" class="w-full border rounded p-1 present-input">`;
+            presentCell.innerHTML = `<input type="number" name="details[${currentIndex}][present_operators]" value="0" min="0" class="w-full border rounded p-1 present-input">`;
             tr.appendChild(presentCell);
 
-            // Temps net
+            // TEMPS NET (vide = 0)
             const netCell = document.createElement('td');
             netCell.className = 'border p-2';
-            netCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][net_time]" value="${data.net_time || 0}" min="0" class="w-full border rounded p-1 net-input">`;
+            netCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][net_time]" value="0" min="0" class="w-full border rounded p-1 net-input">`;
             tr.appendChild(netCell);
 
-            // RÉFÉRENCE - Liste déroulante avec les données de la table references
+            // RÉFÉRENCE - Liste déroulante
             const refCell = document.createElement('td');
             refCell.className = 'border p-2';
             let selectHtml = `<select name="details[${currentIndex}][reference]" class="w-full border rounded p-1 ref-select">`;
-            selectHtml += `<option value="">-- Sélectionner une référence --</option>`;
+            selectHtml += `<option value="" selected>-- Sélectionner --</option>`;
             
-            // Boucle sur les références depuis la base de données
             references.forEach(ref => {
-                const selected = data.reference === ref.reference ? 'selected' : '';
-                selectHtml += `<option value="${ref.reference}" data-coeff="${ref.coefficient}" ${selected}>`;
+                const selected = (data.reference === ref.reference) ? 'selected' : '';
+                selectHtml += `<option value="${ref.reference}" 
+                                    data-coeff="${ref.coefficient}" 
+                                    data-ost="${ref.ost || 0}" 
+                                    data-kosu-obj="${ref.kosu_objectif || 0}"
+                                    ${selected}>`;
                 selectHtml += `${ref.reference} - Coef: ${ref.coefficient}`;
-                if (ref.name) {
-                    selectHtml += ` (${ref.name})`;
-                }
                 selectHtml += `</option>`;
             });
             
@@ -263,37 +292,49 @@
             refCell.innerHTML = selectHtml;
             tr.appendChild(refCell);
 
-            // Coefficient (auto-rempli quand on sélectionne une référence)
+            // COEFFICIENT (toujours 1 par défaut)
             const coeffCell = document.createElement('td');
             coeffCell.className = 'border p-2';
-            coeffCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][coefficient]" value="${data.coefficient || 1}" min="0" class="w-full border rounded p-1 coeff-input" readonly>`;
+            coeffCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][coefficient]" value="1" min="0" class="w-full border rounded p-1 coeff-input" readonly>`;
             tr.appendChild(coeffCell);
 
-            // Quantité objectif
+            // QUANTITÉ OBJECTIF (vide = 0)
             const objCell = document.createElement('td');
             objCell.className = 'border p-2';
-            objCell.innerHTML = `<input type="number" name="details[${currentIndex}][objective_quantity]" value="${data.objective_quantity || 0}" min="0" class="w-full border rounded p-1 obj-input">`;
+            objCell.innerHTML = `<input type="number" name="details[${currentIndex}][objective_quantity]" value="0" min="0" class="w-full border rounded p-1 obj-input">`;
             tr.appendChild(objCell);
 
-            // Bonnes
+            // QUANTITÉ BONNES (vide = 0)
             const goodCell = document.createElement('td');
             goodCell.className = 'border p-2';
-            goodCell.innerHTML = `<input type="number" name="details[${currentIndex}][good_quantity]" value="${data.good_quantity || 0}" min="0" class="w-full border rounded p-1 good-input">`;
+            goodCell.innerHTML = `<input type="number" name="details[${currentIndex}][good_quantity]" value="0" min="0" class="w-full border rounded p-1 good-input">`;
             tr.appendChild(goodCell);
 
-            // Mauvaises
+            // QUANTITÉ MAUVAISES (vide = 0)
             const badCell = document.createElement('td');
             badCell.className = 'border p-2';
-            badCell.innerHTML = `<input type="number" name="details[${currentIndex}][bad_quantity]" value="${data.bad_quantity || 0}" min="0" class="w-full border rounded p-1 bad-input">`;
+            badCell.innerHTML = `<input type="number" name="details[${currentIndex}][bad_quantity]" value="0" min="0" class="w-full border rounded p-1 bad-input">`;
             tr.appendChild(badCell);
 
-            // KOSU réel (affichage)
+            // OST (vide au début)
+            const ostCell = document.createElement('td');
+            ostCell.className = 'border p-2 text-center font-semibold ost-display';
+            ostCell.innerText = '-';
+            tr.appendChild(ostCell);
+
+            // KOSU OBJECTIF (vide au début)
+            const kosuObjCell = document.createElement('td');
+            kosuObjCell.className = 'border p-2 text-center font-semibold kosu-obj-display';
+            kosuObjCell.innerText = '-';
+            tr.appendChild(kosuObjCell);
+
+            // KOSU RÉEL (vide au début)
             const kosuCell = document.createElement('td');
             kosuCell.className = 'border p-2 kosu-display';
-            kosuCell.innerText = data.kosu_real ? data.kosu_real.toFixed(2) : '-';
+            kosuCell.innerText = '-';
             tr.appendChild(kosuCell);
 
-            // Graphique
+            // GRAPHIQUE
             const graphicCell = document.createElement('td');
             graphicCell.className = 'border p-2 text-center graphic-cell';
             const pastille = document.createElement('span');
@@ -302,60 +343,63 @@
             graphicCell.appendChild(pastille);
             tr.appendChild(graphicCell);
 
-            // Commentaires
+            // COMMENTAIRES
             const commentCell = document.createElement('td');
             commentCell.className = 'border p-2';
-            commentCell.innerHTML = `<input type="text" name="details[${currentIndex}][comments]" value="${data.comments || ''}" class="w-full border rounded p-1 comment-input">`;
+            commentCell.innerHTML = `<input type="text" name="details[${currentIndex}][comments]" value="" class="w-full border rounded p-1 comment-input">`;
             tr.appendChild(commentCell);
 
-            // Action (supprimer)
+            // ACTION
             const actionCell = document.createElement('td');
             actionCell.className = 'border p-2 text-center';
-            actionCell.innerHTML = `<button type="button" class="text-red-600 delete-row">Supprimer</button>`;
+            actionCell.innerHTML = `<button type="button" class="bg-red-500 text-white px-2 py-1 rounded text-xs delete-row">Supprimer</button>`;
             tr.appendChild(actionCell);
 
             tbody.appendChild(tr);
             
             attachRowListeners(tr);
-            updateKosuForRow(tr);
-            updateGraphicForRow(tr);
-            saveDraft(); // Sauvegarde après ajout
+            updateCumuls();
         }
 
+        // Attacher les événements
         function attachRowListeners(tr) {
             const refSelect = tr.querySelector('.ref-select');
             const coeffInput = tr.querySelector('.coeff-input');
+            const ostDisplay = tr.querySelector('.ost-display');
+            const kosuObjDisplay = tr.querySelector('.kosu-obj-display');
+            const kosuDisplay = tr.querySelector('.kosu-display');
             
-            // Quand on change la référence, le coefficient se remplit automatiquement
-            if (refSelect && coeffInput) {
+            if (refSelect) {
                 refSelect.addEventListener('change', function() {
                     const selected = this.options[this.selectedIndex];
-                    const coeff = selected.dataset.coeff;
-                    if (coeff) {
-                        coeffInput.value = coeff;
+                    
+                    if (this.value === '') {
+                        // Si on sélectionne l'option vide, on remet tout à '-'
+                        coeffInput.value = '1';
+                        ostDisplay.innerText = '-';
+                        kosuObjDisplay.innerText = '-';
+                        kosuDisplay.innerText = '-';
                     } else {
-                        coeffInput.value = 1;
+                        // Sinon on affiche les données de la référence
+                        const coeff = selected.dataset.coeff;
+                        const ost = selected.dataset.ost;
+                        const kosuObj = selected.dataset.kosuObj;
+                        
+                        if (coeff) coeffInput.value = coeff;
+                        if (ost) ostDisplay.innerText = parseFloat(ost).toFixed(2);
+                        if (kosuObj) kosuObjDisplay.innerText = parseFloat(kosuObj).toFixed(2);
                     }
+                    
                     updateKosuForRow(tr);
-                    updateGraphicForRow(tr);
                     updateCumuls();
-                    saveDraft();
                 });
             }
 
-            const inputs = tr.querySelectorAll('.planned-input, .present-input, .net-input, .good-input, .bad-input, .obj-input, .comment-input');
+            const inputs = tr.querySelectorAll('.planned-input, .present-input, .net-input, .good-input, .bad-input, .obj-input');
             inputs.forEach(input => {
-                input.addEventListener('input', () => {
+                input.addEventListener('input', function() {
                     updateKosuForRow(tr);
-                    updateGraphicForRow(tr);
                     updateCumuls();
-                    saveDraft();
-                });
-                input.addEventListener('change', () => {
-                    updateKosuForRow(tr);
-                    updateGraphicForRow(tr);
-                    updateCumuls();
-                    saveDraft();
                 });
             });
 
@@ -371,6 +415,7 @@
             }
         }
 
+        // Mettre à jour KOSU
         function updateKosuForRow(tr) {
             const present = parseFloat(tr.querySelector('.present-input')?.value) || 0;
             const net = parseFloat(tr.querySelector('.net-input')?.value) || 0;
@@ -386,56 +431,7 @@
             }
         }
 
-        function updateGraphicForRow(tr) {
-            const planned = parseFloat(tr.querySelector('.planned-input')?.value) || 0;
-            const present = parseFloat(tr.querySelector('.present-input')?.value) || 0;
-            const net = parseFloat(tr.querySelector('.net-input')?.value) || 0;
-            const obj = parseFloat(tr.querySelector('.obj-input')?.value) || 0;
-            const good = parseFloat(tr.querySelector('.good-input')?.value) || 0;
-            const coeff = parseFloat(tr.querySelector('.coeff-input')?.value) || 1;
-            
-            const pastille = tr.querySelector('.graphic-pastille');
-            if (!pastille) return;
-
-            // KOSU objectif théorique (basé sur les planifiés)
-            let kosuObj = null;
-            if (planned > 0 && net > 0 && obj > 0 && coeff > 0) {
-                kosuObj = (planned * net) / (obj * coeff);
-            }
-
-            // KOSU réel
-            let kosuReal = null;
-            if (good > 0 && coeff > 0 && present > 0 && net > 0) {
-                kosuReal = (present * net) / (good * coeff);
-            }
-
-            if (kosuObj !== null && kosuReal !== null && kosuObj > 0) {
-                const ecart = ((kosuReal - kosuObj) / kosuObj) * 100;
-                let cssClass, label;
-                if (ecart > 35) {
-                    cssClass = 'graphic-fonce';
-                    label = '>35%';
-                } else if (ecart > 25) {
-                    cssClass = 'graphic-rouge';
-                    label = '+25%';
-                } else if (ecart > 15) {
-                    cssClass = 'graphic-orange';
-                    label = '+15%';
-                } else if (ecart > 0) {
-                    cssClass = 'graphic-jaune';
-                    label = '0-15%';
-                } else {
-                    cssClass = 'graphic-vert';
-                    label = '≤Obj';
-                }
-                pastille.className = `graphic-pastille ${cssClass}`;
-                pastille.innerText = label;
-            } else {
-                pastille.className = 'graphic-pastille graphic-gris';
-                pastille.innerText = '-';
-            }
-        }
-
+        // Mettre à jour les cumuls
         function updateCumuls() {
             let sumPlanned = 0, sumPresent = 0, sumNet = 0, sumObj = 0, sumGood = 0, sumBad = 0;
             let sumNumGlobal = 0, sumDenGlobal = 0;
@@ -463,7 +459,7 @@
                 sumNumGlobal += present * net;
                 sumDenGlobal += good * coeff;
 
-                if (refOk && good > 0 && present > 0 && net > 0) {
+                if (refOk && good > 0) {
                     completeCount++;
                 }
             });
@@ -491,63 +487,64 @@
             document.getElementById('completeCount').innerText = completeCount + ' complète(s)';
         }
 
-        // ---------- Initialisation ----------
+        // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             maxIndex = -1;
 
-            // Priorité : oldDetails (après erreur)
-            if (oldDetails.length > 0) {
+            if (oldDetails && oldDetails.length > 0) {
                 oldDetails.forEach((detail, idx) => {
                     detail.index = idx;
                     addRow(detail);
                 });
             } 
-            // Ensuite : newRows (après succès) -> on efface le localStorage
-            else if (newRows.length > 0) {
+            else if (newRows && newRows.length > 0) {
                 newRows.forEach((row, idx) => {
                     row.index = idx;
                     addRow(row);
                 });
                 localStorage.removeItem(STORAGE_KEY);
             } 
-            // Sinon : charger depuis localStorage si valide
             else {
                 const loaded = loadDraft();
                 if (!loaded) {
-                    // Aucune donnée, ligne par défaut
+                    // Une seule ligne par défaut avec toutes les valeurs vides
                     addRow({ index: 0 });
                 }
             }
 
             updateCumuls();
+            
+            // Sauvegarde automatique toutes les 30 secondes
+            setInterval(() => {
+                if (document.getElementById('tableBody').children.length > 0) {
+                    saveDraft();
+                }
+            }, 30000);
         });
 
-        // Bouton d'ajout de ligne
+        // Bouton Ajouter
         document.getElementById('addRow').addEventListener('click', function() {
             addRow({});
             updateCumuls();
         });
 
-        // Bouton d'effacement du brouillon
+        // Bouton Effacer
         document.getElementById('clearDraft').addEventListener('click', function() {
-            if (confirm('Voulez-vous effacer toutes les données non enregistrées ?')) {
+            if (confirm('Voulez-vous effacer toutes les données ?')) {
                 localStorage.removeItem(STORAGE_KEY);
                 document.getElementById('tableBody').innerHTML = '';
                 maxIndex = -1;
                 addRow({ index: 0 });
                 updateCumuls();
-                saveDraft();
             }
         });
 
-        // Sauvegarde avant de quitter la page
+        // Sauvegarde avant de quitter
         window.addEventListener('beforeunload', function() {
             saveDraft();
         });
     </script>
-    
-
 </body>
 </html>
