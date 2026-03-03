@@ -11,8 +11,11 @@ return new class extends Migration
     {
         Schema::create('references', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->decimal('coefficient', 8, 2)->default(1);
+            $table->string('reference')->unique(); // REF-A100, REF-B200, etc.
+            $table->string('name')->nullable(); // Nom optionnel de la référence
+            $table->decimal('coefficient', 8, 2); // Coefficient (1.2, 1.5, etc.)
+            $table->string('created_by')->default('ME001'); // Créé par
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }

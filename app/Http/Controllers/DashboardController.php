@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Shift;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Reference; // Ajouter cette lignes
 
 class DashboardController extends Controller
 {
@@ -69,7 +70,7 @@ class DashboardController extends Controller
             'shiftsBons',
             'shiftsAttention',
             'shiftsCritiques',
-            'recentShifts'
+            'recentShifts',
         );
     }
 }

@@ -61,6 +61,7 @@
                         @endfor
                     </select>
                 </div>
+                
             </div>
 
             <div class="mb-4 flex justify-between items-center">
@@ -145,7 +146,7 @@
     </div>
 
     <script>
-        // Données des références depuis le serveur
+        // Données des références depuis le serveur (depuis la table references)
         const references = @json($references);
 
         // Anciennes données du formulaire (après erreur de validation)
@@ -241,22 +242,31 @@
             netCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][net_time]" value="${data.net_time || 0}" min="0" class="w-full border rounded p-1 net-input">`;
             tr.appendChild(netCell);
 
-            // Référence
+            // RÉFÉRENCE - Liste déroulante avec les données de la table references
             const refCell = document.createElement('td');
             refCell.className = 'border p-2';
             let selectHtml = `<select name="details[${currentIndex}][reference]" class="w-full border rounded p-1 ref-select">`;
-            selectHtml += `<option value="">-- Sélectionner --</option>`;
+            selectHtml += `<option value="">-- Sélectionner une référence --</option>`;
+            
+            // Boucle sur les références depuis la base de données
             references.forEach(ref => {
-                selectHtml += `<option value="${ref.name}" data-coeff="${ref.coefficient}" ${data.reference === ref.name ? 'selected' : ''}>${ref.name}</option>`;
+                const selected = data.reference === ref.reference ? 'selected' : '';
+                selectHtml += `<option value="${ref.reference}" data-coeff="${ref.coefficient}" ${selected}>`;
+                selectHtml += `${ref.reference} - Coef: ${ref.coefficient}`;
+                if (ref.name) {
+                    selectHtml += ` (${ref.name})`;
+                }
+                selectHtml += `</option>`;
             });
+            
             selectHtml += `</select>`;
             refCell.innerHTML = selectHtml;
             tr.appendChild(refCell);
 
-            // Coefficient
+            // Coefficient (auto-rempli quand on sélectionne une référence)
             const coeffCell = document.createElement('td');
             coeffCell.className = 'border p-2';
-            coeffCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][coefficient]" value="${data.coefficient || 1}" min="0" class="w-full border rounded p-1 coeff-input">`;
+            coeffCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][coefficient]" value="${data.coefficient || 1}" min="0" class="w-full border rounded p-1 coeff-input" readonly>`;
             tr.appendChild(coeffCell);
 
             // Quantité objectif
@@ -315,11 +325,17 @@
         function attachRowListeners(tr) {
             const refSelect = tr.querySelector('.ref-select');
             const coeffInput = tr.querySelector('.coeff-input');
+            
+            // Quand on change la référence, le coefficient se remplit automatiquement
             if (refSelect && coeffInput) {
                 refSelect.addEventListener('change', function() {
                     const selected = this.options[this.selectedIndex];
                     const coeff = selected.dataset.coeff;
-                    if (coeff) coeffInput.value = coeff;
+                    if (coeff) {
+                        coeffInput.value = coeff;
+                    } else {
+                        coeffInput.value = 1;
+                    }
                     updateKosuForRow(tr);
                     updateGraphicForRow(tr);
                     updateCumuls();
@@ -327,7 +343,7 @@
                 });
             }
 
-            const inputs = tr.querySelectorAll('.planned-input, .present-input, .net-input, .good-input, .bad-input, .coeff-input, .obj-input, .comment-input');
+            const inputs = tr.querySelectorAll('.planned-input, .present-input, .net-input, .good-input, .bad-input, .obj-input, .comment-input');
             inputs.forEach(input => {
                 input.addEventListener('input', () => {
                     updateKosuForRow(tr);
@@ -362,7 +378,7 @@
             const coeff = parseFloat(tr.querySelector('.coeff-input')?.value) || 1;
             const kosuDisplay = tr.querySelector('.kosu-display');
 
-            if (good > 0 && coeff > 0) {
+            if (good > 0 && coeff > 0 && present > 0 && net > 0) {
                 const kosu = (present * net) / (good * coeff);
                 kosuDisplay.innerText = kosu.toFixed(2);
             } else {
@@ -459,8 +475,8 @@
             document.getElementById('sumGood').innerText = sumGood;
             document.getElementById('sumBad').innerText = sumBad;
 
-            const totalProd = sumGood;
-            const defectRate = (sumGood + sumBad) > 0 ? ((sumBad / (sumGood + sumBad)) * 100).toFixed(2) : 0;
+            const totalProd = sumGood + sumBad;
+            const defectRate = totalProd > 0 ? ((sumBad / totalProd) * 100).toFixed(2) : 0;
             document.getElementById('totalProduction').innerText = totalProd;
             document.getElementById('defectRate').innerText = defectRate + '%';
 
@@ -487,7 +503,6 @@
                     detail.index = idx;
                     addRow(detail);
                 });
-                // Ne pas effacer le localStorage ici pour ne pas perdre un brouillon non soumis
             } 
             // Ensuite : newRows (après succès) -> on efface le localStorage
             else if (newRows.length > 0) {
@@ -523,11 +538,11 @@
                 maxIndex = -1;
                 addRow({ index: 0 });
                 updateCumuls();
-                saveDraft(); // pour enregistrer l'état vide
+                saveDraft();
             }
         });
 
-        // Sauvegarde avant de quitter la page (optionnel)
+        // Sauvegarde avant de quitter la page
         window.addEventListener('beforeunload', function() {
             saveDraft();
         });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard {{ $role }}</title>
+    <title>Dashboard {{ ucfirst($role) }}</title>
     <style>
         * {
             margin: 0;
@@ -31,7 +31,6 @@
             padding: 2rem 2rem 2.5rem;
         }
 
-        /* En-tête */
         .dashboard-header {
             display: flex;
             justify-content: space-between;
@@ -69,11 +68,10 @@
             display: flex;
             gap: 0.75rem;
             align-items: center;
-            flex-wrap: wrap;
         }
 
-        .btn-coefficient {
-            background: #1f3b88;
+        .btn-shift {
+            background: #4c5baf;
             color: white;
             border: none;
             font-weight: 500;
@@ -86,12 +84,13 @@
             align-items: center;
             gap: 0.5rem;
             text-decoration: none;
-            
+            border: 1px solid #255b99;
         }
 
-        .btn-coefficient:hover {
-            background: #1f3b88;
+        .btn-shift:hover {
+            background: #4574a0;
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
         }
 
         .logout-form button {
@@ -115,7 +114,6 @@
             color: #2463eb;
         }
 
-        /* Grille des cards stats */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -162,13 +160,11 @@
             padding-top: 0.6rem;
         }
 
-        /* couleurs nuancées par carte */
-        .stat-card:nth-child(1) .stat-value { color: #2e3b4e; }        /* total */
-        .stat-card:nth-child(2) .stat-value { color: #1c8b5c; }        /* bons */
-        .stat-card:nth-child(3) .stat-value { color: #d48a2c; }        /* attention */
-        .stat-card:nth-child(4) .stat-value { color: #c73b3b; }        /* critiques */
+        .stat-card:nth-child(1) .stat-value { color: #2e3b4e; }
+        .stat-card:nth-child(2) .stat-value { color: #1c8b5c; }
+        .stat-card:nth-child(3) .stat-value { color: #d48a2c; }
+        .stat-card:nth-child(4) .stat-value { color: #c73b3b; }
 
-        /* section shifts récents */
         .recent-header {
             display: flex;
             justify-content: space-between;
@@ -204,7 +200,6 @@
             font-weight: 500;
         }
 
-        /* tableau simple / liste */
         .shifts-table {
             width: 100%;
             border-collapse: collapse;
@@ -240,7 +235,6 @@
             background-color: #f1f7fe;
         }
 
-        /* status badges */
         .status-badge {
             display: inline-block;
             padding: 0.25rem 1rem;
@@ -266,7 +260,11 @@
             color: #c73b3b;
         }
 
-        /* styles pour les colonnes */
+        .status-indefini {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
         .shift-ref {
             font-family: monospace;
             font-weight: 500;
@@ -295,7 +293,6 @@
             font-weight: 500;
         }
 
-        /* responsive */
         @media (max-width: 1000px) {
             .stats-grid { gap: 1rem; }
         }
@@ -321,7 +318,6 @@
 </head>
 <body>
 <div class="dashboard-container">
-    <!-- header -->
     <div class="dashboard-header">
         <div class="title-section">
             <h1>
@@ -330,18 +326,14 @@
             <p class="welcome-text">Bienvenue, vous êtes connecté comme <strong>{{ $role }}</strong></p>
         </div>
         
-        <!-- Boutons d'action groupés -->
         <div class="action-buttons">
-            <!-- Bouton Créer Coefficient -->
-            <a href="" class="btn-coefficient">
+            <a href="{{ route('references.index') }}" class="btn-shift">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 5v14M5 12h14"/>
-                    <circle cx="12" cy="12" r="10"/>
                 </svg>
-                Créer Coefficient
+                Saisir Référence - Coefficient
             </a>
             
-            <!-- Bouton Logout -->
             <form method="POST" action="{{ route('logout') }}" class="logout-form">
                 @csrf
                 <button type="submit">
@@ -356,39 +348,47 @@
         </div>
     </div>
 
-    <!-- 4 cards statistiques -->
+    <!-- Cartes statistiques dynamiques -->
     <div class="stats-grid">
-        <!-- total shifts -->
         <div class="stat-card">
             <div class="stat-title">📋 Total Shifts</div>
-            <div class="stat-value">158</div>
-            <div class="stat-footer">+12% vs mois dernier</div>
+            <div class="stat-value">{{ $totalShifts }}</div>
+            <div class="stat-footer">
+                @if($recentShifts->isNotEmpty())
+                    Dernier: {{ $recentShifts->first()->date->format('d/m') }}
+                @else
+                    Aucun shift
+                @endif
+            </div>
         </div>
-        <!-- shifts bons -->
         <div class="stat-card">
             <div class="stat-title">✅ Shifts Bons</div>
-            <div class="stat-value">94</div>
-            <div class="stat-footer">59.5% des shifts</div>
+            <div class="stat-value">{{ $shiftsBons }}</div>
+            <div class="stat-footer">
+                {{ $totalShifts > 0 ? round(($shiftsBons/$totalShifts)*100, 1) : 0 }}% des shifts
+            </div>
         </div>
-        <!-- shifts attention -->
         <div class="stat-card">
             <div class="stat-title">⚠️ Shifts Attention</div>
-            <div class="stat-value">41</div>
-            <div class="stat-footer">25.9% du total</div>
+            <div class="stat-value">{{ $shiftsAttention }}</div>
+            <div class="stat-footer">
+                {{ $totalShifts > 0 ? round(($shiftsAttention/$totalShifts)*100, 1) : 0 }}% du total
+            </div>
         </div>
-        <!-- shifts critiques -->
         <div class="stat-card">
             <div class="stat-title">🔴 Shifts Critiques</div>
-            <div class="stat-value">23</div>
-            <div class="stat-footer">14.6% à traiter</div>
+            <div class="stat-value">{{ $shiftsCritiques }}</div>
+            <div class="stat-footer">
+                {{ $totalShifts > 0 ? round(($shiftsCritiques/$totalShifts)*100, 1) : 0 }}% à traiter
+            </div>
         </div>
     </div>
 
-    <!-- Shifts récents avec tableau -->
+    <!-- Shifts récents -->
     <div class="recent-header">
         <h2>
             Shifts récents
-            <span>5 derniers</span>
+            <span>{{ $recentShifts->count() }} derniers</span>
         </h2>
         <div class="badge-light">Mis à jour en temps réel</div>
     </div>
@@ -397,65 +397,71 @@
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Shift</th>
+                <th>Équipe / Speaker</th>
                 <th>Ligne</th>
                 <th>Référence</th>
-                <th>KOSU</th>
+                <th>KOSU Global</th>
                 <th>Statut</th>
             </tr>
         </thead>
         <tbody>
-            <!-- ligne 1 -->
+            @forelse($recentShifts as $shift)
             <tr>
-                <td><span class="shift-date">2025-03-17</span></td>
-                <td>Nuit (22h-06h)</td>
-                <td class="shift-ligne">Ligne A3</td>
-                <td><span class="shift-ref">REF-7845</span></td>
-                <td><span class="shift-kosu">KOSU-7845</span></td>
-                <td><span class="status-badge status-bon">Bon</span></td>
+                <td><span class="shift-date">{{ $shift->date->format('d/m/Y') }}</span></td>
+                <td>{{ $shift->team_speaker ?? 'Non renseigné' }}</td>
+                <td class="shift-ligne">{{ $shift->line }}</td>
+                <td>
+                    @if($shift->details->isNotEmpty())
+                        @php
+                            $firstDetail = $shift->details->first();
+                        @endphp
+                        <span class="shift-ref">{{ $firstDetail->reference ?? 'N/A' }}</span>
+                    @else
+                        <span class="shift-ref">N/A</span>
+                    @endif
+                </td>
+                <td>
+                    @if($shift->global_kosu)
+                        <span class="shift-kosu">{{ number_format($shift->global_kosu, 2) }}</span>
+                    @else
+                        <span class="shift-kosu">-</span>
+                    @endif
+                </td>
+                <td>
+                    @php
+                        $kosu = $shift->global_kosu;
+                        if ($kosu === null) {
+                            $badgeClass = 'status-indefini';
+                            $label = 'Indéfini';
+                        } elseif ($kosu <= 1.0) {
+                            $badgeClass = 'status-bon';
+                            $label = 'Bon';
+                        } elseif ($kosu <= 1.15) {
+                            $badgeClass = 'status-attention';
+                            $label = 'Attention';
+                        } else {
+                            $badgeClass = 'status-critique';
+                            $label = 'Critique';
+                        }
+                    @endphp
+                    <span class="status-badge {{ $badgeClass }}">{{ $label }}</span>
+                </td>
             </tr>
-            <!-- ligne 2 -->
+            @empty
             <tr>
-                <td><span class="shift-date">2025-03-17</span></td>
-                <td>Jour (06h-14h)</td>
-                <td class="shift-ligne">Ligne B2</td>
-                <td><span class="shift-ref">REF-6521</span></td>
-                <td><span class="shift-kosu">KOSU-6521</span></td>
-                <td><span class="status-badge status-attention">Attention</span></td>
+                <td colspan="6" class="text-center p-4">Aucun shift récent</td>
             </tr>
-            <!-- ligne 3 -->
-            <tr>
-                <td><span class="shift-date">2025-03-16</span></td>
-                <td>Après-midi (14h-22h)</td>
-                <td class="shift-ligne">Ligne C1</td>
-                <td><span class="shift-ref">REF-9134</span></td>
-                <td><span class="shift-kosu">KOSU-9134</span></td>
-                <td><span class="status-badge status-critique">Critique</span></td>
-            </tr>
-            <!-- ligne 4 -->
-            <tr>
-                <td><span class="shift-date">2025-03-16</span></td>
-                <td>Nuit (22h-06h)</td>
-                <td class="shift-ligne">Ligne A3</td>
-                <td><span class="shift-ref">REF-4219</span></td>
-                <td><span class="shift-kosu">KOSU-4219</span></td>
-                <td><span class="status-badge status-bon">Bon</span></td>
-            </tr>
-            <!-- ligne 5 -->
-            <tr>
-                <td><span class="shift-date">2025-03-15</span></td>
-                <td>Jour (06h-14h)</td>
-                <td class="shift-ligne">Ligne D4</td>
-                <td><span class="shift-ref">REF-5523</span></td>
-                <td><span class="shift-kosu">KOSU-5523</span></td>
-                <td><span class="status-badge status-attention">Attention</span></td>
-            </tr>
+            @endforelse
         </tbody>
     </table>
 
-    <!-- petite note design -->
     <div style="margin-top: 1.8rem; text-align: right; font-size: 0.75rem; color: #abbacf;">
-        ⚡ vue d'ensemble • dernière activité il y a 2 minutes
+        ⚡ vue d'ensemble • dernière activité 
+        @if($recentShifts->isNotEmpty())
+            {{ $recentShifts->first()->created_at->diffForHumans() }}
+        @else
+            jamais
+        @endif
     </div>
 </div>
 </body>

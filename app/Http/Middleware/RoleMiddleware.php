@@ -4,15 +4,20 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, $role)
     {
-        $user = Auth::user();
-        if(!$user || $user->role !== $role){
-            abort(403,'Accès non autorisé');
+        if (!auth()->check()) {
+            abort(403, 'Accès non autorisé');
+        }
+
+        $userRole = strtolower(trim(auth()->user()->role));
+        $requiredRole = strtolower(trim($role));
+
+        if ($userRole !== $requiredRole) {
+            abort(403, 'Accès non autorisé');
         }
 
         return $next($request);
