@@ -7,24 +7,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
         Schema::create('shifts', function (Blueprint $table) {
             $table->id();
             $table->date('date');
-            $table->string('team_speaker')->nullable();
-            $table->string('supervisor')->nullable();
-            $table->string('line'); // L1, L2...
-            $table->foreignId('user_id')->references('id')->on('accounts')->onDelete('cascade');
+            $table->string('team_speaker'); // équipe
+            $table->string('supervisor'); // superviseur
+            $table->string('segment'); // segment
+            $table->string('line'); // ligne (L1, L2...)
+            $table->foreignId('user_id')->constrained('accounts')->onDelete('cascade');
             $table->timestamps();
         });
     }
 
-     public function down()
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
-        Schema::table('shifts', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-            $table->foreign('user_id')->references('id')->on('accounts')->onDelete('cascade');
-        });
+        Schema::dropIfExists('shifts');
     }
 };

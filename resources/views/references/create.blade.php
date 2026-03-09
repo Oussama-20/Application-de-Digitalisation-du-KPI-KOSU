@@ -232,18 +232,18 @@
                         Coefficient <span class="required">*</span>
                         <span class="badge-required">Obligatoire</span>
                     </label>
-                    <input type="number" 
+                    <input type="text" 
                            id="coefficient" 
                            name="coefficient" 
                            value="{{ old('coefficient') }}" 
-                           step="0.1" 
-                           min="0" 
-                           max="9999.99"
                            placeholder="Ex: 1.5"
                            required>
                     @error('coefficient')
                         <span class="error">{{ $message }}</span>
                     @enderror
+                    <div class="info-text">
+                        Entrez la valeur que vous voulez (ex: 1.5, 2.75, 0.5)
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -251,20 +251,17 @@
                         OST (Operation Standard Time) <span class="required">*</span>
                         <span class="badge-required">Obligatoire</span>
                     </label>
-                    <input type="number" 
+                    <input type="text" 
                            id="ost" 
                            name="ost" 
                            value="{{ old('ost') }}" 
-                           step="0.01" 
-                           min="0" 
-                           max="9999.99"
                            placeholder="Ex: 2.5"
                            required>
                     @error('ost')
                         <span class="error">{{ $message }}</span>
                     @enderror
                     <div class="info-text">
-                        Temps standard d'opération (en minutes)
+                        Temps standard d'opération en minutes (ex: 2.5 pour 2 minutes 30)
                     </div>
                 </div>
             </div>
@@ -275,18 +272,18 @@
                         KOSU Objectif <span class="required">*</span>
                         <span class="badge-required">Obligatoire</span>
                     </label>
-                    <input type="number" 
+                    <input type="text" 
                            id="kosu_objectif" 
                            name="kosu_objectif" 
                            value="{{ old('kosu_objectif') }}" 
-                           step="0.01" 
-                           min="0" 
-                           max="9999.99"
                            placeholder="Ex: 1.2"
                            required>
                     @error('kosu_objectif')
                         <span class="error">{{ $message }}</span>
                     @enderror
+                    <div class="info-text">
+                        Valeur cible du KOSU (ex: 1.2, 1.35, 0.95)
+                    </div>
                 </div>
 
                 <div class="form-group">

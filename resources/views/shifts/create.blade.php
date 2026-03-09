@@ -32,7 +32,7 @@
         }
         
         table {
-            min-width: 1800px; /* Tableau plus large */
+            min-width: 1900px; /* Augmenté pour inclure le segment */
             border-collapse: collapse;
         }
         
@@ -60,18 +60,22 @@
         <form method="POST" action="{{ route('shifts.store') }}" id="shiftForm">
             @csrf
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6"> <!-- Changé de 4 à 5 colonnes -->
                 <div>
                     <label class="block text-sm font-medium">Date</label>
                     <input type="date" name="date" value="{{ old('date', now()->format('Y-m-d')) }}" class="w-full border rounded p-2" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium">Team Speaker</label>
-                    <input type="text" name="team_speaker" value="{{ old('team_speaker') }}" class="w-full border rounded p-2">
+                    <input type="text" name="team_speaker" value="{{ old('team_speaker') }}" class="w-full border rounded p-2" placeholder="Team Speaker" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium">Superviseur</label>
-                    <input type="text" name="supervisor" value="{{ old('supervisor') }}" class="w-full border rounded p-2">
+                    <input type="text" name="supervisor" value="{{ old('supervisor') }}" class="w-full border rounded p-2" placeholder="Superviseur" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">Segment</label>
+                    <input type="text" name="segment" value="{{ old('segment') }}" class="w-full border rounded p-2" placeholder="Segment" required>
                 </div>
                 <div>
                     <label class="block text-sm font-medium">Ligne</label>
@@ -100,7 +104,7 @@
                             <th class="border p-2">HEURES</th>
                             <th class="border p-2">NB OP.<br>PLANIFIÉS</th>
                             <th class="border p-2">NB OP.<br>PRÉSENTS</th>
-                            <th class="border p-2">TEMPS NET<br>(H)</th>
+                            <th class="border p-2">TEMPS NET<br>(MIN)</th>
                             <th class="border p-2">RÉFÉRENCE</th>
                             <th class="border p-2">COEFF.</th>
                             <th class="border p-2">QUANTITÉ<br>OBJ.</th>
@@ -207,6 +211,7 @@
                 rows: rows
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+            console.log('Brouillon sauvegardé', rows.length, 'lignes');
         }
 
         function loadDraft() {
@@ -218,10 +223,12 @@
                 const age = Date.now() - draft.timestamp;
                 
                 if (age > EXPIRY_HOURS * 60 * 60 * 1000) {
+                    console.log('Brouillon expiré');
                     localStorage.removeItem(STORAGE_KEY);
                     return false;
                 }
                 
+                console.log('Brouillon chargé', draft.rows.length, 'lignes');
                 document.getElementById('tableBody').innerHTML = '';
                 
                 if (draft.rows && draft.rows.length > 0) {
@@ -229,12 +236,51 @@
                         rowData.index = index;
                         addRow(rowData);
                     });
+                    
+                    // Mettre à jour les cumuls après avoir ajouté toutes les lignes
+                    setTimeout(() => {
+                        updateCumuls();
+                        
+                        // Déclencher les événements change sur les selects pour afficher les données OST et KOSU
+                        document.querySelectorAll('.ref-select').forEach(select => {
+                            if (select.value) {
+                                const event = new Event('change', { bubbles: true });
+                                select.dispatchEvent(event);
+                            }
+                        });
+                    }, 100);
+                    
                     return true;
                 }
             } catch (e) {
+                console.error('Erreur de chargement du brouillon:', e);
                 localStorage.removeItem(STORAGE_KEY);
             }
             return false;
+        }
+
+        // ---------- Sauvegarde automatique à chaque modification ----------
+        function setupAutoSave() {
+            // Sauvegarde après chaque modification dans le tableau
+            document.addEventListener('input', function(e) {
+                if (e.target.closest('#tableBody')) {
+                    saveDraft();
+                }
+            });
+            
+            // Sauvegarde après changement de sélection
+            document.addEventListener('change', function(e) {
+                if (e.target.closest('#tableBody')) {
+                    saveDraft();
+                }
+            });
+            
+            // Sauvegarde après suppression de ligne
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-row')) {
+                    // La sauvegarde se fera après la suppression via le setTimeout dans deleteRow
+                }
+            });
         }
 
         // ---------- Ajouter une ligne avec valeurs vides ----------
@@ -253,29 +299,29 @@
             hourCell.innerHTML = `<input type="time" name="details[${currentIndex}][hour]" value="${data.hour || '08:00'}" class="w-full border rounded p-1 hour-input" required>`;
             tr.appendChild(hourCell);
 
-            // PLANIFIÉS (vide = 0)
+            // PLANIFIÉS
             const plannedCell = document.createElement('td');
             plannedCell.className = 'border p-2';
-            plannedCell.innerHTML = `<input type="number" name="details[${currentIndex}][planned_operators]" value="0" min="0" class="w-full border rounded p-1 planned-input">`;
+            plannedCell.innerHTML = `<input type="number" name="details[${currentIndex}][planned_operators]" value="${data.planned_operators || '0'}" min="0" class="w-full border rounded p-1 planned-input">`;
             tr.appendChild(plannedCell);
 
-            // PRÉSENTS (vide = 0)
+            // PRÉSENTS
             const presentCell = document.createElement('td');
             presentCell.className = 'border p-2';
-            presentCell.innerHTML = `<input type="number" name="details[${currentIndex}][present_operators]" value="0" min="0" class="w-full border rounded p-1 present-input">`;
+            presentCell.innerHTML = `<input type="number" name="details[${currentIndex}][present_operators]" value="${data.present_operators || '0'}" min="0" class="w-full border rounded p-1 present-input">`;
             tr.appendChild(presentCell);
 
-            // TEMPS NET (vide = 0)
+            // TEMPS NET (MIN)
             const netCell = document.createElement('td');
             netCell.className = 'border p-2';
-            netCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][net_time]" value="0" min="0" class="w-full border rounded p-1 net-input">`;
+            netCell.innerHTML = `<input type="number" step="1" name="details[${currentIndex}][net_time]" value="${data.net_time || '0'}" min="0" class="w-full border rounded p-1 net-input" placeholder="minutes">`;
             tr.appendChild(netCell);
 
             // RÉFÉRENCE - Liste déroulante
             const refCell = document.createElement('td');
             refCell.className = 'border p-2';
             let selectHtml = `<select name="details[${currentIndex}][reference]" class="w-full border rounded p-1 ref-select">`;
-            selectHtml += `<option value="" selected>-- Sélectionner --</option>`;
+            selectHtml += `<option value="">-- Sélectionner --</option>`;
             
             references.forEach(ref => {
                 const selected = (data.reference === ref.reference) ? 'selected' : '';
@@ -292,43 +338,43 @@
             refCell.innerHTML = selectHtml;
             tr.appendChild(refCell);
 
-            // COEFFICIENT (toujours 1 par défaut)
+            // COEFFICIENT
             const coeffCell = document.createElement('td');
             coeffCell.className = 'border p-2';
-            coeffCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][coefficient]" value="1" min="0" class="w-full border rounded p-1 coeff-input" readonly>`;
+            coeffCell.innerHTML = `<input type="number" step="0.01" name="details[${currentIndex}][coefficient]" value="${data.coefficient || '1'}" min="0" class="w-full border rounded p-1 coeff-input" readonly>`;
             tr.appendChild(coeffCell);
 
-            // QUANTITÉ OBJECTIF (vide = 0)
+            // QUANTITÉ OBJECTIF
             const objCell = document.createElement('td');
             objCell.className = 'border p-2';
-            objCell.innerHTML = `<input type="number" name="details[${currentIndex}][objective_quantity]" value="0" min="0" class="w-full border rounded p-1 obj-input">`;
+            objCell.innerHTML = `<input type="number" name="details[${currentIndex}][objective_quantity]" value="${data.objective_quantity || '0'}" min="0" class="w-full border rounded p-1 obj-input">`;
             tr.appendChild(objCell);
 
-            // QUANTITÉ BONNES (vide = 0)
+            // QUANTITÉ BONNES
             const goodCell = document.createElement('td');
             goodCell.className = 'border p-2';
-            goodCell.innerHTML = `<input type="number" name="details[${currentIndex}][good_quantity]" value="0" min="0" class="w-full border rounded p-1 good-input">`;
+            goodCell.innerHTML = `<input type="number" name="details[${currentIndex}][good_quantity]" value="${data.good_quantity || '0'}" min="0" class="w-full border rounded p-1 good-input">`;
             tr.appendChild(goodCell);
 
-            // QUANTITÉ MAUVAISES (vide = 0)
+            // QUANTITÉ MAUVAISES
             const badCell = document.createElement('td');
             badCell.className = 'border p-2';
-            badCell.innerHTML = `<input type="number" name="details[${currentIndex}][bad_quantity]" value="0" min="0" class="w-full border rounded p-1 bad-input">`;
+            badCell.innerHTML = `<input type="number" name="details[${currentIndex}][bad_quantity]" value="${data.bad_quantity || '0'}" min="0" class="w-full border rounded p-1 bad-input">`;
             tr.appendChild(badCell);
 
-            // OST (vide au début)
+            // OST
             const ostCell = document.createElement('td');
             ostCell.className = 'border p-2 text-center font-semibold ost-display';
-            ostCell.innerText = '-';
+            ostCell.innerText = data.ost ? parseFloat(data.ost).toFixed(2) : '-';
             tr.appendChild(ostCell);
 
-            // KOSU OBJECTIF (vide au début)
+            // KOSU OBJECTIF
             const kosuObjCell = document.createElement('td');
             kosuObjCell.className = 'border p-2 text-center font-semibold kosu-obj-display';
-            kosuObjCell.innerText = '-';
+            kosuObjCell.innerText = data.kosu_objectif ? parseFloat(data.kosu_objectif).toFixed(2) : '-';
             tr.appendChild(kosuObjCell);
 
-            // KOSU RÉEL (vide au début)
+            // KOSU RÉEL
             const kosuCell = document.createElement('td');
             kosuCell.className = 'border p-2 kosu-display';
             kosuCell.innerText = '-';
@@ -346,7 +392,7 @@
             // COMMENTAIRES
             const commentCell = document.createElement('td');
             commentCell.className = 'border p-2';
-            commentCell.innerHTML = `<input type="text" name="details[${currentIndex}][comments]" value="" class="w-full border rounded p-1 comment-input">`;
+            commentCell.innerHTML = `<input type="text" name="details[${currentIndex}][comments]" value="${data.comments || ''}" class="w-full border rounded p-1 comment-input">`;
             tr.appendChild(commentCell);
 
             // ACTION
@@ -359,6 +405,9 @@
             
             attachRowListeners(tr);
             updateCumuls();
+            
+            // Sauvegarder après ajout
+            setTimeout(saveDraft, 100);
         }
 
         // Attacher les événements
@@ -374,13 +423,11 @@
                     const selected = this.options[this.selectedIndex];
                     
                     if (this.value === '') {
-                        // Si on sélectionne l'option vide, on remet tout à '-'
                         coeffInput.value = '1';
                         ostDisplay.innerText = '-';
                         kosuObjDisplay.innerText = '-';
                         kosuDisplay.innerText = '-';
                     } else {
-                        // Sinon on affiche les données de la référence
                         const coeff = selected.dataset.coeff;
                         const ost = selected.dataset.ost;
                         const kosuObj = selected.dataset.kosuObj;
@@ -392,14 +439,16 @@
                     
                     updateKosuForRow(tr);
                     updateCumuls();
+                    saveDraft(); // Sauvegarde après changement
                 });
             }
 
-            const inputs = tr.querySelectorAll('.planned-input, .present-input, .net-input, .good-input, .bad-input, .obj-input');
+            const inputs = tr.querySelectorAll('.planned-input, .present-input, .net-input, .good-input, .bad-input, .obj-input, .comment-input');
             inputs.forEach(input => {
                 input.addEventListener('input', function() {
                     updateKosuForRow(tr);
                     updateCumuls();
+                    saveDraft(); // Sauvegarde après chaque saisie
                 });
             });
 
@@ -409,7 +458,7 @@
                     if (confirm('Supprimer cette ligne ?')) {
                         tr.remove();
                         updateCumuls();
-                        saveDraft();
+                        saveDraft(); // Sauvegarde après suppression
                     }
                 });
             }
@@ -466,7 +515,7 @@
 
             document.getElementById('sumPlanned').innerText = sumPlanned;
             document.getElementById('sumPresent').innerText = sumPresent.toFixed(1);
-            document.getElementById('sumNetTime').innerText = sumNet.toFixed(2);
+            document.getElementById('sumNetTime').innerText = sumNet.toFixed(0);
             document.getElementById('sumObj').innerText = sumObj;
             document.getElementById('sumGood').innerText = sumGood;
             document.getElementById('sumBad').innerText = sumBad;
@@ -493,41 +542,55 @@
             tbody.innerHTML = '';
             maxIndex = -1;
 
+            // Priorité 1: Anciennes données du formulaire (après erreur de validation)
             if (oldDetails && oldDetails.length > 0) {
+                console.log('Chargement des anciennes données', oldDetails.length, 'lignes');
                 oldDetails.forEach((detail, idx) => {
                     detail.index = idx;
                     addRow(detail);
                 });
             } 
+            // Priorité 2: Nouvelles lignes flashées
             else if (newRows && newRows.length > 0) {
+                console.log('Chargement des nouvelles lignes', newRows.length, 'lignes');
                 newRows.forEach((row, idx) => {
                     row.index = idx;
                     addRow(row);
                 });
                 localStorage.removeItem(STORAGE_KEY);
             } 
+            // Priorité 3: Brouillon sauvegardé
             else {
                 const loaded = loadDraft();
                 if (!loaded) {
-                    // Une seule ligne par défaut avec toutes les valeurs vides
+                    console.log('Aucune donnée, création d\'une ligne par défaut');
                     addRow({ index: 0 });
                 }
             }
 
-            updateCumuls();
+            // Mettre à jour les cumuls
+            setTimeout(() => {
+                updateCumuls();
+                
+                // Déclencher les événements change pour les selects
+                document.querySelectorAll('.ref-select').forEach(select => {
+                    if (select.value) {
+                        const event = new Event('change', { bubbles: true });
+                        select.dispatchEvent(event);
+                    }
+                });
+            }, 200);
             
-            // Sauvegarde automatique toutes les 30 secondes
-            setInterval(() => {
-                if (document.getElementById('tableBody').children.length > 0) {
-                    saveDraft();
-                }
-            }, 30000);
+            // Activer la sauvegarde automatique
+            setupAutoSave();
+            
+            // Sauvegarde initiale
+            setTimeout(saveDraft, 500);
         });
 
         // Bouton Ajouter
         document.getElementById('addRow').addEventListener('click', function() {
             addRow({});
-            updateCumuls();
         });
 
         // Bouton Effacer

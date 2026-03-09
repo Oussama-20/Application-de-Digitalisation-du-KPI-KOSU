@@ -8,7 +8,7 @@ class Shift extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['date', 'team_speaker', 'supervisor', 'line', 'user_id'];
+    protected $fillable = ['date', 'team_speaker', 'supervisor', 'line', 'segment', 'user_id'];
 
     protected $casts = [
         'date' => 'date',

@@ -232,7 +232,6 @@
         <div class="footer">
             ⚡ Connexion sécurisée · environnement professionnel
             
-            
         </div>
     </div>
 </body>

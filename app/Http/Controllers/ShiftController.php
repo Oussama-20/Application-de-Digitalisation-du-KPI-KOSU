@@ -22,6 +22,7 @@ class ShiftController extends Controller
             'date' => 'required|date',
             'team_speaker' => 'nullable|string|max:255',
             'supervisor' => 'nullable|string|max:255',
+            'segment' => 'required|string|max:50', // AJOUT: validation du segment
             'line' => 'required|string|max:10',
             'details' => 'required|array|min:1',
             'details.*.hour' => 'required|date_format:H:i',
@@ -40,6 +41,7 @@ class ShiftController extends Controller
             'date' => $request->date,
             'team_speaker' => $request->team_speaker,
             'supervisor' => $request->supervisor,
+            'segment' => $request->segment, // AJOUT: insertion du segment
             'line' => $request->line,
             'user_id' => Auth::id(),
         ]);
