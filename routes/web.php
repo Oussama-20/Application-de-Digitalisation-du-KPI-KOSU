@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\ReferenceController;
+use App\Http\Controllers\ImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,8 +50,8 @@ Route::middleware(['role:methodes'])->group(function(){
     |-------------------------
     */
 
-    // Liste
-    Route::get('/references', [ReferenceController::class, 'index'])->name('references.index');
+    // Liste:
+Route::get('/references', [ReferenceController::class, 'index'])->name('references.index');
 Route::get('/references/create', [ReferenceController::class, 'create'])->name('references.create');
 Route::post('/references', [ReferenceController::class, 'store'])->name('references.store');
 Route::get('/references/{reference}/edit', [ReferenceController::class, 'edit'])->name('references.edit');
@@ -81,10 +82,22 @@ Route::middleware(['role:shift_leader'])->group(function(){
         ->name('shifts.show');
 });
 
+
+
+// Afficher le formulaire d'import
+Route::get('/import-excel', function() {
+    return view('import-excel');
+})->name('import.excel.form');
+// routes/web.php
+
+Route::get('/import-excel', [App\Http\Controllers\ExcelImportController::class, 'index'])->name('import.excel.form');
+Route::post('/import-excel/preview', [App\Http\Controllers\ExcelImportController::class, 'preview'])->name('import.excel.preview');
+Route::post('/import-excel/confirm', [App\Http\Controllers\ExcelImportController::class, 'confirm'])->name('import.excel.confirm');
 /*
 |--------------------------------------------------------------------------
 | Logout
 |--------------------------------------------------------------------------
 */
+
 Route::post('/logout',[AuthController::class,'logout'])
     ->name('logout');

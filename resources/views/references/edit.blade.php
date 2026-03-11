@@ -18,7 +18,7 @@
         }
         
         .container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -64,19 +64,15 @@
         .btn-primary {
             background: #4361ee;
             color: white;
-            padding: 12px;
+            padding: 12px 24px;
             font-size: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
         }
         
         .btn-primary:hover {
             background: #3046b3;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
         }
         
         .form-group {
@@ -91,7 +87,7 @@
             font-size: 14px;
         }
         
-        input, textarea {
+        input {
             width: 100%;
             padding: 12px 15px;
             border: 2px solid #e9ecef;
@@ -100,40 +96,32 @@
             transition: all 0.3s;
         }
         
-        input:focus, textarea:focus {
+        input:focus {
             outline: none;
             border-color: #4361ee;
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
         }
         
-        .error {
-            color: #dc3545;
-            font-size: 13px;
-            margin-top: 5px;
-            display: block;
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
         }
         
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
         }
         
-        .button-group button, .button-group a {
-            flex: 1;
-            text-align: center;
-        }
-        
-        .required {
-            color: #dc3545;
-            font-size: 13px;
-            margin-left: 5px;
-        }
-        
-        .info-text {
-            color: #6c757d;
-            font-size: 12px;
-            margin-top: 5px;
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 30px 0 20px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #4361ee;
         }
         
         .footer {
@@ -143,13 +131,34 @@
             font-size: 13px;
         }
         
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 20px 0 15px 0;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e9ecef;
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+        
+        .error {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .obligatoire {
+            background: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 8px;
+            text-transform: uppercase;
         }
     </style>
 </head>
@@ -162,143 +171,140 @@
             </a>
         </div>
 
+        @if($errors->any())
+            <div style="background: #fee2e2; color: #dc3545; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <strong>⚠️ Veuillez corriger les erreurs :</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form action="{{ route('references.update', $reference) }}" method="POST">
             @csrf
             @method('PUT')
 
-            <div class="section-title">📌 Informations de base</div>
-            
-            <div class="form-group">
-                <label for="reference">
-                    Référence <span class="required">*</span>
-                </label>
-                <input type="text" 
-                       id="reference" 
-                       name="reference" 
-                       value="{{ old('reference', $reference->reference) }}" 
-                       placeholder="Ex: REF-A100"
-                       required>
-                @error('reference')
-                    <span class="error">{{ $message }}</span>
-                @enderror
-                <div class="info-text">
-                    Format: REF-XXX (ex: REF-A100, REF-B200)
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="name">Nom de la référence</label>
-                <input type="text" 
-                       id="name" 
-                       name="name" 
-                       value="{{ old('name', $reference->name) }}" 
-                       placeholder="Ex: Réference test">
-                @error('name')
-                    <span class="error">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <div class="section-title">⚙️ Paramètres techniques</div>
-            
-            <div class="form-row">
+            <!-- Référence et Coefficient -->
+            <div class="row">
                 <div class="form-group">
-                    <label for="coefficient">
-                        Coefficient <span class="required">*</span>
-                    </label>
+                    <label class="required">Référence <span class="obligatoire">Obligatoire</span></label>
+                    <input type="text" 
+                           name="reference" 
+                           value="{{ old('reference', $reference->reference) }}" 
+                           placeholder="Ex: REF-A100"
+                           required>
+                    @error('reference')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Coefficient <span class="obligatoire">Obligatoire</span></label>
                     <input type="number" 
-                           id="coefficient" 
                            name="coefficient" 
-                           value="{{ old('coefficient', $reference->coefficient) }}" 
-                           step="0.1" 
+                           value="{{ old('coefficient', $reference->coefficient) }}"
+                           step="0.01" 
                            min="0" 
-                           max="9999.99"
                            placeholder="Ex: 1.5"
                            required>
                     @error('coefficient')
                         <span class="error">{{ $message }}</span>
                     @enderror
                 </div>
+            </div>
 
+            <!-- OST et KOSU Objectif -->
+            <div class="row">
                 <div class="form-group">
-                    <label for="ost">
-                        OST (Operation Standard Time)
-                    </label>
+                    <label class="required">OST <span class="obligatoire">Obligatoire</span></label>
                     <input type="number" 
-                           id="ost" 
                            name="ost" 
-                           value="{{ old('ost', $reference->ost) }}" 
+                           value="{{ old('ost', $reference->ost) }}"
                            step="0.01" 
                            min="0" 
-                           max="9999.99"
-                           placeholder="Ex: 2.5">
+                           placeholder="Ex: 2.5"
+                           required>
                     @error('ost')
                         <span class="error">{{ $message }}</span>
                     @enderror
-                    <div class="info-text">
-                        Temps standard d'opération (en minutes)
-                    </div>
                 </div>
-            </div>
 
-            <div class="form-row">
                 <div class="form-group">
-                    <label for="kosu_objectif">
-                        KOSU Objectif
-                    </label>
+                    <label class="required">KOSU Objectif <span class="obligatoire">Obligatoire</span></label>
                     <input type="number" 
-                           id="kosu_objectif" 
                            name="kosu_objectif" 
-                           value="{{ old('kosu_objectif', $reference->kosu_objectif) }}" 
+                           value="{{ old('kosu_objectif', $reference->kosu_objectif) }}"
                            step="0.01" 
                            min="0" 
-                           max="9999.99"
-                           placeholder="Ex: 1.2">
+                           placeholder="Ex: 1.2"
+                           required>
                     @error('kosu_objectif')
                         <span class="error">{{ $message }}</span>
                     @enderror
-                    <div class="info-text">
-                        KOSU objectif pour cette référence
-                    </div>
+                </div>
+            </div>
+
+            <!-- Pourcentages -->
+            <div class="section-title">📊 Pourcentages (Tous obligatoires)</div>
+            
+            <div class="row-3">
+                <div class="form-group">
+                    <label class="required">+15% <span class="obligatoire">Obligatoire</span></label>
+                    <input type="number" 
+                           name="pourcentage_15" 
+                           value="{{ old('pourcentage_15', $reference->pourcentage_15) }}"
+                           step="0.01" 
+                           min="0" 
+                           placeholder="0.00"
+                           required>
+                    @error('pourcentage_15')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="created_by">
-                        Créé par
-                    </label>
-                    <input type="text" 
-                           id="created_by" 
-                           name="created_by" 
-                           value="{{ old('created_by', $reference->created_by) }}" 
-                           class="bg-gray-50"
-                           readonly>
+                    <label class="required">+25% <span class="obligatoire">Obligatoire</span></label>
+                    <input type="number" 
+                           name="pourcentage_25" 
+                           value="{{ old('pourcentage_25', $reference->pourcentage_25) }}"
+                           step="0.01" 
+                           min="0" 
+                           placeholder="0.00"
+                           required>
+                    @error('pourcentage_25')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label class="required">+35% <span class="obligatoire">Obligatoire</span></label>
+                    <input type="number" 
+                           name="pourcentage_35" 
+                           value="{{ old('pourcentage_35', $reference->pourcentage_35) }}"
+                           step="0.01" 
+                           min="0" 
+                           placeholder="0.00"
+                           required>
+                    @error('pourcentage_35')
+                        <span class="error">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
-            <div class="section-title">📝 Informations complémentaires</div>
-            
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" 
-                          name="description" 
-                          rows="4" 
-                          placeholder="Description détaillée de la référence...">{{ old('description', $reference->description) }}</textarea>
-                @error('description')
-                    <span class="error">{{ $message }}</span>
-                @enderror
-            </div>
+            <!-- Créé par (hidden) -->
+            <input type="hidden" name="created_by" value="ME001">
 
-            <div class="button-group">
+            <div style="text-align: right; margin-top: 30px;">
                 <button type="submit" class="btn btn-primary">
                     💾 Mettre à jour
                 </button>
-                <a href="{{ route('references.index') }}" class="btn btn-back">
-                    ✖ Annuler
-                </a>
             </div>
         </form>
 
         <div class="footer">
-          LEONI_BOUZNIKA
+            LEONI_BOUZNIKA
         </div>
     </div>
 </body>

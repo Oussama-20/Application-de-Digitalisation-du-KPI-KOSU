@@ -333,7 +333,13 @@
                 </svg>
                 Saisir Référence - Coefficient
             </a>
-            
+              <!-- Remplacer cette ligne dans votre dashboard -->
+            <a href="{{ route('import.excel.form') }}" class="btn-shift">
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                   <path d="M12 5v14M5 12h14"/>
+            </svg>
+             Import Fichier Excel
+            </a>
             <form method="POST" action="{{ route('logout') }}" class="logout-form">
                 @csrf
                 <button type="submit">
